@@ -77,14 +77,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "Accessibility Plugin" },
+      { name: "description", content: "An accessibility plugin that generates a blank page with the text \"Accessibility Plugin.\"" },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:title", content: "Accessibility Plugin" },
+      { property: "og:description", content: "An accessibility plugin that generates a blank page with the text \"Accessibility Plugin.\"" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "Accessibility Plugin" },
+      { name: "twitter:description", content: "An accessibility plugin that generates a blank page with the text \"Accessibility Plugin.\"" },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/656f5e62-81a4-4cd7-a933-8afee898703d/id-preview-b9e9ef1d--5d20a53b-5118-407f-bd10-32410c56d39c.lovable.app-1780859626499.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/656f5e62-81a4-4cd7-a933-8afee898703d/id-preview-b9e9ef1d--5d20a53b-5118-407f-bd10-32410c56d39c.lovable.app-1780859626499.png" },
     ],
     links: [
       {
