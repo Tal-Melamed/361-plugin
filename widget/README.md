@@ -1,18 +1,18 @@
 # Accessibility Widget (תוסף נגישות)
 
 Platform-agnostic, self-contained accessibility widget for the Israeli market.
-One async `<script>` adds a floating Hebrew/RTL control panel and runs a
-background DOM-remediation engine. Targets **WCAG 2.1 AA** and the Israeli
-**Equal Rights for Persons with Disabilities Regulations (Accessibility
-Adjustments for Services), 2013**.
+One async `<script>` adds a floating Hebrew/RTL control panel to any site.
+
+**This is a faithful vanilla-TS port of the bugbox `AccessibilityWidget`** — same
+dark design, same ISA wheelchair icon, same features and CSS effects — repackaged
+as a single CDN bundle so it works on WordPress, Shopify, Wix, Webflow, Next.js,
+plain HTML, etc. (not only inside a React app).
 
 - **Zero runtime dependencies.** Vanilla TS → single IIFE bundle.
-- **Client-side only.** Works on WordPress, Shopify, Wix, Webflow, Next.js, plain HTML.
 - **No FOUC.** A tiny critical shim applies saved prefs before first paint.
-- **Reversible.** Everything is driven by `data-a11y-*` attributes; reset removes them.
+- **Reversible.** Driven by `a11y-*` classes on `<html>`; reset removes them.
 
-See [ARCHITECTURE.md](./ARCHITECTURE.md) for the full design and the engine's
-leak/loop-safety rules.
+See [ARCHITECTURE.md](./ARCHITECTURE.md) for the full design.
 
 ## Develop
 
@@ -20,33 +20,24 @@ leak/loop-safety rules.
 cd widget
 npm install
 npm run dev      # local playground
-npm run build    # → dist/a11y.js (IIFE, check it stays < 40kb gzipped)
+npm run build    # → dist/a11y.js (IIFE)
 ```
 
 ## Install on a host site
 
 Paste [`snippet.html`](./snippet.html) before `</body>`, replacing `CDN_URL`
-with your CDN. Optional overrides on the script tag:
+with your CDN.
 
-```html
-<script src="CDN_URL/a11y.js" data-a11y
-        data-position="bottom-left"
-        data-accent="#1a56db"
-        data-site-key="YOUR_KEY"  <!-- Phase 2 only -->
-        async defer></script>
-```
+## Features (identical to bugbox)
 
-## Feature status (this build = "Architecture + working core")
-
-| Area | Status |
+| Feature | Effect |
 |---|---|
-| Floating button + RTL Hebrew panel, focus trap, Esc, ARIA | ✅ |
-| State + localStorage persistence, reset, no-FOUC shim | ✅ |
-| Contrast: invert / high (dark+yellow) / low / mono | ✅ |
-| Font scaling (100–200%), line spacing, readable font | ✅ |
-| Highlight links / headers, stop animations, big cursor | ✅ |
-| Reading guide + curtain mask | ✅ |
-| Engine: skip link, alt fallback, role/keyboard on clickable divs, label binding | ✅ |
-| Engine: MutationObserver (debounced, loop-guarded, leak-safe) | ✅ |
-| Heading-order repair | ⏳ deliberately conservative (see ARCHITECTURE.md) |
-| Remote config / licensing / dashboard (Supabase) | ⏳ Phase 2 |
+| Font size (A / A+ / A++) | 100% / 120% / 145% root scale |
+| ניגודיות גבוהה (High contrast) | true black/white, yellow links |
+| גווני אפור (Grayscale) | full-page desaturation |
+| הדגשת קישורים (Highlight links) | blue outline + background on links |
+| סמן גדול (Big cursor) | enlarged SVG pointer |
+| איפוס הגדרות (Reset) | restore native state, clear storage |
+
+Plus keyboard a11y the React original lacked: focus trap, Esc-to-close,
+`aria-haspopup`/`aria-expanded`, and an `aria-live` announcer.

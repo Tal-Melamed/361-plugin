@@ -1,56 +1,37 @@
-// Component A — the control panel (accessible RTL modal).
-// Built once, wired with event delegation (a couple of listeners on the root,
-// not one per control), and kept in sync with the Store via subscribe().
+// Component A — the control panel. Faithful vanilla port of the bugbox panel
+// (font-size buttons + toggle rows + reset), wired with event delegation and
+// synced to the Store. Adds keyboard a11y the React original lacked: focus
+// trap, Esc-to-close, aria-live announcements.
 import { HE } from "../core/i18n";
-import { Store, type A11ySettings, type Contrast, type Spacing } from "../core/state";
+import { Store, type A11yState } from "../core/state";
+import { WHEELCHAIR_ICON } from "./button";
 
-const SPACING_CYCLE: Spacing[] = ["normal", "wide", "wider"];
+const CLOSE_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>`;
+const RESET_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>`;
 
-// Boolean toggles grouped for rendering.
-const BOOL_GROUPS: { title: string; items: { key: keyof A11ySettings; label: string }[] }[] = [
-  {
-    title: HE.groupTypography,
-    items: [{ key: "readableFont", label: HE.readableFont }],
-  },
-  {
-    title: HE.groupNavigation,
-    items: [
-      { key: "highlightLinks", label: HE.highlightLinks },
-      { key: "highlightHeaders", label: HE.highlightHeaders },
-    ],
-  },
-  {
-    title: HE.groupContent,
-    items: [
-      { key: "stopAnimations", label: HE.stopAnimations },
-      { key: "curtain", label: HE.curtain },
-    ],
-  },
-  {
-    title: HE.groupPointer,
-    items: [
-      { key: "bigCursor", label: HE.bigCursor },
-      { key: "readingGuide", label: HE.readingGuide },
-    ],
-  },
+const FONT_BTNS = [
+  { lvl: 0, label: "A", size: "13px" },
+  { lvl: 1, label: "A+", size: "16px" },
+  { lvl: 2, label: "A++", size: "20px" },
 ];
 
-const CONTRAST_OPTS: { val: Contrast; label: string }[] = [
-  { val: "invert", label: HE.contrastInvert },
-  { val: "high", label: HE.contrastHigh },
-  { val: "low", label: HE.contrastLow },
-  { val: "mono", label: HE.contrastMono },
+const TOGGLES: { key: keyof A11yState; label: string; icon: string }[] = [
+  { key: "highContrast", label: HE.highContrast, icon: "◑" },
+  { key: "grayscale", label: HE.grayscale, icon: "◐" },
+  { key: "highlightLinks", label: HE.highlightLinks, icon: "🔗" },
+  { key: "bigCursor", label: HE.bigCursor, icon: "↖" },
 ];
 
 export class Panel {
   readonly el: HTMLDivElement;
-  private trigger: HTMLElement;
   private live: HTMLElement;
   private open = false;
   private lastFocus: HTMLElement | null = null;
 
-  constructor(private store: Store, trigger: HTMLElement) {
-    this.trigger = trigger;
+  constructor(
+    private store: Store,
+    private trigger: HTMLElement,
+  ) {
     this.el = document.createElement("div");
     this.el.className = "a11y-panel";
     this.el.setAttribute("role", "dialog");
@@ -58,10 +39,8 @@ export class Panel {
     this.el.setAttribute("aria-label", HE.panelTitle);
     this.el.setAttribute("data-open", "false");
     this.el.innerHTML = this.render();
-
     this.live = this.el.querySelector(".a11y-live")!;
 
-    // Event delegation: one click + one keydown listener.
     this.el.addEventListener("click", this.onClick);
     this.el.addEventListener("keydown", this.onKeydown);
 
@@ -70,86 +49,52 @@ export class Panel {
   }
 
   private render(): string {
-    const contrastBtns = CONTRAST_OPTS.map(
-      (o) =>
-        `<button type="button" class="a11y-toggle" data-act="contrast" data-val="${o.val}" aria-pressed="false">${o.label}</button>`,
+    const fontBtns = FONT_BTNS.map(
+      (b) =>
+        `<button type="button" class="a11y-font-btn" data-act="font" data-lvl="${b.lvl}" style="font-size:${b.size}" aria-pressed="false">${b.label}</button>`,
     ).join("");
 
-    const boolGroups = BOOL_GROUPS.map(
-      (g) => `
-      <section class="a11y-group">
-        <h3>${g.title}</h3>
-        <div class="a11y-controls">
-          ${g.items
-            .map(
-              (it) =>
-                `<button type="button" class="a11y-toggle" data-act="toggle" data-key="${String(it.key)}" aria-pressed="false">${it.label}</button>`,
-            )
-            .join("")}
-        </div>
-      </section>`,
+    const toggles = TOGGLES.map(
+      (t) => `
+      <button type="button" class="a11y-toggle" data-act="toggle" data-key="${String(t.key)}" aria-pressed="false">
+        <span class="a11y-toggle-label"><span aria-hidden="true">${t.icon}</span><span>${t.label}</span></span>
+        <span class="a11y-switch" aria-hidden="true"></span>
+      </button>`,
     ).join("");
 
     return `
-      <div class="a11y-panel-header">
-        <h2>${HE.panelTitle}</h2>
-        <button type="button" class="a11y-close" data-act="close" aria-label="${HE.close}">×</button>
+      <div class="a11y-header">
+        <span class="a11y-header-title">${WHEELCHAIR_ICON}<span>${HE.panelTitle}</span></span>
+        <button type="button" class="a11y-close" data-act="close" aria-label="${HE.close}">${CLOSE_ICON}</button>
       </div>
-
-      <section class="a11y-group">
-        <h3>${HE.groupContrast}</h3>
-        <div class="a11y-controls">${contrastBtns}</div>
-      </section>
-
-      <section class="a11y-group">
-        <h3>${HE.groupTypography}</h3>
-        <div class="a11y-font-row">
-          <button type="button" data-act="font" data-dir="-1" aria-label="${HE.fontDecrease}">−</button>
-          <output class="a11y-font-out">100%</output>
-          <button type="button" data-act="font" data-dir="1" aria-label="${HE.fontIncrease}">+</button>
+      <div class="a11y-body">
+        <div>
+          <p class="a11y-section-label">${HE.fontSizeGroup}</p>
+          <div class="a11y-font-row">${fontBtns}</div>
         </div>
-        <div class="a11y-controls" style="margin-top:8px">
-          <button type="button" class="a11y-toggle" data-act="spacing" aria-pressed="false">${HE.lineSpacing}</button>
-        </div>
-      </section>
-
-      ${boolGroups}
-
-      <button type="button" class="a11y-reset" data-act="reset">${HE.reset}</button>
-      <div class="a11y-sr-only a11y-live" role="status" aria-live="polite"></div>
+        ${toggles}
+        <button type="button" class="a11y-reset" data-act="reset">${RESET_ICON}<span>${HE.reset}</span></button>
+        <div class="a11y-sr-only a11y-live" role="status" aria-live="polite"></div>
+      </div>
     `;
   }
 
   private onClick = (e: MouseEvent): void => {
     const t = (e.target as HTMLElement).closest<HTMLElement>("[data-act]");
     if (!t) return;
-    const act = t.dataset.act!;
     const s = this.store.get();
-
-    switch (act) {
+    switch (t.dataset.act) {
       case "close":
         this.close();
         break;
-      case "contrast": {
-        const val = t.dataset.val as Contrast;
-        this.store.set("contrast", s.contrast === val ? "none" : val);
+      case "font":
+        this.store.update({ fontSize: Number(t.dataset.lvl) });
         break;
-      }
       case "toggle": {
-        const key = t.dataset.key as keyof A11ySettings;
-        this.store.set(key, !s[key] as never);
-        this.announce(!s[key] ? HE.on : HE.off);
-        break;
-      }
-      case "font": {
-        const dir = Number(t.dataset.dir);
-        this.store.setFontScale(s.fontScale + dir * 0.1);
-        this.announce(HE.fontNow(Math.round(this.store.get().fontScale * 100)));
-        break;
-      }
-      case "spacing": {
-        const next = SPACING_CYCLE[(SPACING_CYCLE.indexOf(s.spacing) + 1) % SPACING_CYCLE.length];
-        this.store.set("spacing", next);
+        const key = t.dataset.key as keyof A11yState;
+        const next = !s[key];
+        this.store.update({ [key]: next });
+        this.announce(next ? HE.on : HE.off);
         break;
       }
       case "reset":
@@ -159,17 +104,16 @@ export class Panel {
     }
   };
 
-  // Esc closes; Tab is trapped within the dialog (focus loop).
   private onKeydown = (e: KeyboardEvent): void => {
     if (e.key === "Escape") {
       this.close();
       return;
     }
     if (e.key !== "Tab") return;
-    const focusables = this.focusable();
-    if (focusables.length === 0) return;
-    const first = focusables[0];
-    const last = focusables[focusables.length - 1];
+    const f = this.focusable();
+    if (!f.length) return;
+    const first = f[0];
+    const last = f[f.length - 1];
     if (e.shiftKey && document.activeElement === first) {
       e.preventDefault();
       last.focus();
@@ -180,28 +124,22 @@ export class Panel {
   };
 
   private focusable(): HTMLElement[] {
-    return Array.from(
-      this.el.querySelectorAll<HTMLElement>("button, [href], output, [tabindex]:not([tabindex='-1'])"),
-    ).filter((el) => el.offsetParent !== null);
+    return Array.from(this.el.querySelectorAll<HTMLElement>("button")).filter(
+      (el) => el.offsetParent !== null,
+    );
   }
 
-  // Reflect current settings onto control pressed-states + font readout.
-  private sync(s: Readonly<A11ySettings>): void {
-    this.el.querySelectorAll<HTMLElement>("[data-act='contrast']").forEach((b) => {
-      b.setAttribute("aria-pressed", String(b.dataset.val === s.contrast));
+  private sync(s: Readonly<A11yState>): void {
+    this.el.querySelectorAll<HTMLElement>("[data-act='font']").forEach((b) => {
+      b.setAttribute("aria-pressed", String(Number(b.dataset.lvl) === s.fontSize));
     });
     this.el.querySelectorAll<HTMLElement>("[data-act='toggle']").forEach((b) => {
-      b.setAttribute("aria-pressed", String(Boolean(s[b.dataset.key as keyof A11ySettings])));
+      b.setAttribute("aria-pressed", String(Boolean(s[b.dataset.key as keyof A11yState])));
     });
-    const spacingBtn = this.el.querySelector<HTMLElement>("[data-act='spacing']");
-    spacingBtn?.setAttribute("aria-pressed", String(s.spacing !== "normal"));
-    const out = this.el.querySelector<HTMLOutputElement>(".a11y-font-out");
-    if (out) out.textContent = `${Math.round(s.fontScale * 100)}%`;
   }
 
   private announce(msg: string): void {
     this.live.textContent = "";
-    // Force a re-announce even if text repeats.
     window.requestAnimationFrame(() => (this.live.textContent = msg));
   }
 

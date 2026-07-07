@@ -1,96 +1,68 @@
 // Component C — State management & persistence.
-// Single source of truth for user accessibility preferences. Persists to
-// localStorage keyed per host so settings carry across page views / subdomains.
+// Faithful port of the bugbox AccessibilityWidget model. Single source of
+// truth for user prefs, persisted to localStorage per host.
 
-export type Contrast = "none" | "invert" | "high" | "low" | "mono";
-export type Spacing = "normal" | "wide" | "wider";
-
-export interface A11ySettings {
-  contrast: Contrast;
-  fontScale: number; // 1.0 .. 2.0
-  spacing: Spacing;
-  readableFont: boolean;
+export interface A11yState {
+  fontSize: number; // 0 = normal, 1 = medium (120%), 2 = large (145%)
+  highContrast: boolean;
+  grayscale: boolean;
   highlightLinks: boolean;
-  highlightHeaders: boolean;
-  stopAnimations: boolean;
-  curtain: boolean;
   bigCursor: boolean;
-  readingGuide: boolean;
 }
 
-export const DEFAULTS: A11ySettings = {
-  contrast: "none",
-  fontScale: 1,
-  spacing: "normal",
-  readableFont: false,
+export const DEFAULT: A11yState = {
+  fontSize: 0,
+  highContrast: false,
+  grayscale: false,
   highlightLinks: false,
-  highlightHeaders: false,
-  stopAnimations: false,
-  curtain: false,
   bigCursor: false,
-  readingGuide: false,
 };
 
-export const FONT_MIN = 1;
-export const FONT_MAX = 2;
-export const FONT_STEP = 0.1;
+// Matches the critical shim in snippet.html.
+export const STORAGE_KEY = "bugbox_a11y";
+export const FONT_SIZES = ["100%", "120%", "145%"] as const;
 
-type Listener = (s: Readonly<A11ySettings>) => void;
+type Listener = (s: Readonly<A11yState>) => void;
 
 export class Store {
-  private settings: A11ySettings;
+  private state: A11yState;
   private listeners = new Set<Listener>();
-  private readonly key: string;
 
-  constructor(storagePrefix: string) {
-    // Key per host so subdomains on the same registrable domain can share via
-    // a cookie later; localStorage is per-origin which already covers the host.
-    this.key = `${storagePrefix}:state:${location.hostname}`;
-    this.settings = this.load();
+  constructor() {
+    this.state = this.load();
   }
 
-  private load(): A11ySettings {
+  private load(): A11yState {
     try {
-      const raw = localStorage.getItem(this.key);
-      if (!raw) return { ...DEFAULTS };
-      const parsed = JSON.parse(raw) as Partial<A11ySettings>;
-      // Merge over defaults so a newer build adding a key never breaks an old
-      // saved blob.
-      return { ...DEFAULTS, ...parsed };
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? { ...DEFAULT, ...(JSON.parse(raw) as Partial<A11yState>) } : { ...DEFAULT };
     } catch {
-      return { ...DEFAULTS };
+      return { ...DEFAULT };
     }
   }
 
   private persist(): void {
     try {
-      localStorage.setItem(this.key, JSON.stringify(this.settings));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
     } catch {
-      /* storage full / disabled — settings still apply for this session */
+      /* storage disabled — still applies for this session */
     }
   }
 
-  get(): Readonly<A11ySettings> {
-    return this.settings;
+  get(): Readonly<A11yState> {
+    return this.state;
   }
 
-  set<K extends keyof A11ySettings>(key: K, value: A11ySettings[K]): void {
-    if (this.settings[key] === value) return;
-    this.settings = { ...this.settings, [key]: value };
+  update(patch: Partial<A11yState>): void {
+    this.state = { ...this.state, ...patch };
     this.persist();
     this.emit();
   }
 
-  /** Clamp + apply a font scale change in one call. */
-  setFontScale(value: number): void {
-    const clamped = Math.min(FONT_MAX, Math.max(FONT_MIN, Math.round(value * 10) / 10));
-    this.set("fontScale", clamped);
-  }
-
   reset(): void {
-    this.settings = { ...DEFAULTS };
+    this.state = { ...DEFAULT };
     try {
-      localStorage.removeItem(this.key);
+      localStorage.removeItem(STORAGE_KEY);
     } catch {
       /* ignore */
     }
@@ -103,6 +75,6 @@ export class Store {
   }
 
   private emit(): void {
-    for (const fn of this.listeners) fn(this.settings);
+    for (const fn of this.listeners) fn(this.state);
   }
 }
