@@ -4,7 +4,7 @@
 // trap, Esc-to-close, aria-live announcements.
 import { HE } from "../core/i18n";
 import { Store, type A11yState } from "../core/state";
-import { WHEELCHAIR_ICON } from "./button";
+import { A11Y_ICON } from "./button";
 
 const CLOSE_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>`;
 const RESET_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>`;
@@ -64,7 +64,7 @@ export class Panel {
 
     return `
       <div class="a11y-header">
-        <span class="a11y-header-title">${WHEELCHAIR_ICON}<span>${HE.panelTitle}</span></span>
+        <span class="a11y-header-title">${A11Y_ICON}<span>${HE.panelTitle}</span></span>
         <button type="button" class="a11y-close" data-act="close" aria-label="${HE.close}">${CLOSE_ICON}</button>
       </div>
       <div class="a11y-body">

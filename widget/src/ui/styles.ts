@@ -14,7 +14,7 @@ export function buildStyles(): string {
 /* ---- Trigger button — black circle, ISA wheelchair icon, bottom-left ---- */
 .a11y-trigger {
   position: fixed; left: 32px; bottom: 24px; z-index: 2147483646;
-  width: 40px; height: 40px; border-radius: 9999px;
+  width: 36px; height: 36px; border-radius: 9999px;
   background: #000; color: #fff; border: 0; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   box-shadow: 0 10px 15px -3px rgba(0,0,0,.3);
@@ -22,7 +22,7 @@ export function buildStyles(): string {
 }
 .a11y-trigger:hover { background: #1f2937; transform: scale(1.1); }
 .a11y-trigger:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
-.a11y-trigger svg { width: 20px; height: 20px; fill: currentColor; }
+.a11y-trigger svg { width: 18px; height: 18px; fill: currentColor; }
 @media (max-width: 768px) { .a11y-trigger { bottom: 80px; } }
 
 /* ---- Panel ---- */
