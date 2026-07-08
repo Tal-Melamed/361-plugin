@@ -8,6 +8,14 @@ export interface SiteFeatures {
   bigCursor: boolean;
 }
 
+// Maestro modules enabled per site (see lib/modules.ts).
+export interface SiteModules {
+  accessibility: boolean;
+  seo: boolean;
+}
+
+export const DEFAULT_MODULES: SiteModules = { accessibility: true, seo: false };
+
 export interface Site {
   id: string;
   owner_id: string;
@@ -17,6 +25,7 @@ export interface Site {
   accent: string;
   position: "bottom-left" | "bottom-right";
   features: SiteFeatures;
+  modules: SiteModules;
   statement_url: string | null;
   coordinator_name: string | null;
   coordinator_email: string | null;

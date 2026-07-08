@@ -1,6 +1,6 @@
 import { useEffect, type ReactNode } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { LogOut, Accessibility } from "lucide-react";
+import { LogOut, Boxes } from "lucide-react";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { useSession } from "@/lib/useSession";
 import { Button } from "@/components/ui/button";
@@ -34,8 +34,8 @@ export function DashboardShell({ children }: { children: ReactNode }) {
       <header className="border-b bg-background">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
           <Link to="/dashboard" className="flex items-center gap-2 font-semibold">
-            <Accessibility className="h-5 w-5" />
-            <span>ניהול נגישות</span>
+            <Boxes className="h-5 w-5" />
+            <span>Maestro</span>
           </Link>
           <div className="flex items-center gap-3">
             <span className="hidden text-sm text-muted-foreground sm:inline">{session.user.email}</span>

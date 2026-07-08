@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Accessibility } from "lucide-react";
+import { Boxes } from "lucide-react";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { useSession } from "@/lib/useSession";
 import { Button } from "@/components/ui/button";
@@ -56,7 +56,7 @@ function LoginPage() {
       <Card className="w-full max-w-sm">
         <CardHeader className="items-center text-center">
           <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-foreground text-background">
-            <Accessibility className="h-6 w-6" />
+            <Boxes className="h-6 w-6" />
           </div>
           <CardTitle>{mode === "signin" ? "התחברות" : "הרשמה"}</CardTitle>
           <CardDescription>ניהול האתרים והווידג'טים שלך</CardDescription>

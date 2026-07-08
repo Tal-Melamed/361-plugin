@@ -1,24 +1,16 @@
-import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowRight, Copy, Check, Trash2 } from "lucide-react";
+import { ArrowRight, Trash2, Accessibility, Search } from "lucide-react";
 import { toast } from "sonner";
-import {
-  getSite,
-  updateSite,
-  deleteSite,
-  buildSnippet,
-  DEFAULT_FEATURES,
-  type Site,
-  type SiteFeatures,
-} from "@/lib/sites";
+import { getSite, updateSite, deleteSite, DEFAULT_MODULES, type Site, type SiteModules } from "@/lib/sites";
+import { MODULES, type ModuleId } from "@/lib/modules";
 import { DashboardShell } from "@/components/DashboardShell";
+import { AccessibilityModule } from "@/components/modules/AccessibilityModule";
+import { SeoModule } from "@/components/modules/SeoModule";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,38 +31,22 @@ export const Route = createFileRoute("/dashboard/sites/$siteId")({
   ),
 });
 
-const FEATURE_LABELS: { key: keyof SiteFeatures; label: string }[] = [
-  { key: "fontSize", label: "גודל גופן" },
-  { key: "highContrast", label: "ניגודיות גבוהה" },
-  { key: "grayscale", label: "גווני אפור" },
-  { key: "highlightLinks", label: "הדגשת קישורים" },
-  { key: "bigCursor", label: "סמן גדול" },
-];
+const MODULE_ICON = { accessibility: Accessibility, seo: Search };
 
 function SiteDetail() {
   const { siteId } = Route.useParams();
   const qc = useQueryClient();
   const navigate = useNavigate();
-  const [copied, setCopied] = useState(false);
-  const [form, setForm] = useState<Site | null>(null);
 
   const { data: site, isLoading } = useQuery({
     queryKey: ["site", siteId],
     queryFn: () => getSite(siteId),
   });
 
-  useEffect(() => {
-    if (site) setForm({ ...site, features: { ...DEFAULT_FEATURES, ...site.features } });
-  }, [site]);
-
-  const save = useMutation({
-    mutationFn: (patch: Partial<Site>) => updateSite(siteId, patch),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["site", siteId] });
-      qc.invalidateQueries({ queryKey: ["sites"] });
-      toast.success("נשמר");
-    },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה בשמירה"),
+  const setModules = useMutation({
+    mutationFn: (modules: SiteModules) => updateSite(siteId, { modules }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["site", siteId] }),
+    onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה — ודאו שהרצתם את מיגרציה 0002"),
   });
 
   const remove = useMutation({
@@ -83,138 +59,64 @@ function SiteDetail() {
     onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה במחיקה"),
   });
 
-  if (isLoading || !form) return <p className="text-muted-foreground">טוען…</p>;
+  if (isLoading || !site) return <p className="text-muted-foreground">טוען…</p>;
 
-  const snippet = buildSnippet(form);
-
-  const copy = async () => {
-    await navigator.clipboard.writeText(snippet);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  };
-
-  const set = <K extends keyof Site>(key: K, value: Site[K]) => setForm({ ...form, [key]: value });
+  const modules = site.modules ?? DEFAULT_MODULES;
+  const toggle = (id: ModuleId, on: boolean) => setModules.mutate({ ...modules, [id]: on });
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Button asChild variant="ghost" size="icon">
-            <Link to="/dashboard">
-              <ArrowRight className="h-5 w-5" />
-            </Link>
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold">{form.name}</h1>
-            <p dir="ltr" className="text-right text-sm text-muted-foreground">{form.domain}</p>
-          </div>
-        </div>
-        <Button onClick={() => save.mutate(form)} disabled={save.isPending}>
-          {save.isPending ? "שומר…" : "שמירת שינויים"}
+      <div className="flex items-center gap-2">
+        <Button asChild variant="ghost" size="icon">
+          <Link to="/dashboard">
+            <ArrowRight className="h-5 w-5" />
+          </Link>
         </Button>
+        <div>
+          <h1 className="text-2xl font-bold">{site.name}</h1>
+          <p dir="ltr" className="text-right text-sm text-muted-foreground">{site.domain}</p>
+        </div>
       </div>
 
-      {/* Install snippet */}
-      <Card>
-        <CardHeader>
-          <CardTitle>קוד התקנה</CardTitle>
-          <CardDescription>הדביקו לפני תג ה-<code>&lt;/body&gt;</code> בכל עמוד באתר.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <pre dir="ltr" className="overflow-x-auto rounded-lg bg-muted p-3 text-left text-xs">
-            <code>{snippet}</code>
-          </pre>
-          <Button variant="outline" size="sm" onClick={copy}>
-            {copied ? <Check className="ml-1 h-4 w-4" /> : <Copy className="ml-1 h-4 w-4" />}
-            {copied ? "הועתק" : "העתקת הקוד"}
-          </Button>
-        </CardContent>
-      </Card>
+      <Tabs defaultValue="accessibility">
+        <TabsList>
+          {MODULES.map((m) => {
+            const Icon = MODULE_ICON[m.id];
+            return (
+              <TabsTrigger key={m.id} value={m.id} className="gap-1.5">
+                <Icon className="h-4 w-4" />
+                {m.name}
+              </TabsTrigger>
+            );
+          })}
+        </TabsList>
 
-      {/* Widget config */}
-      <Card>
-        <CardHeader>
-          <CardTitle>הגדרות הווידג'ט</CardTitle>
-          <CardDescription>מיקום, צבע והפיצ'רים שיוצגו למשתמשים.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-5">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label>מיקום הכפתור</Label>
-              <Select value={form.position} onValueChange={(v) => set("position", v as Site["position"])}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="bottom-left">שמאל למטה</SelectItem>
-                  <SelectItem value="bottom-right">ימין למטה</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="accent">צבע הכפתור</Label>
-              <div className="flex items-center gap-2">
-                <input
-                  id="accent"
-                  type="color"
-                  value={form.accent}
-                  onChange={(e) => set("accent", e.target.value)}
-                  className="h-9 w-12 cursor-pointer rounded border"
-                />
-                <Input dir="ltr" value={form.accent} onChange={(e) => set("accent", e.target.value)} className="w-32" />
-              </div>
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label>פיצ'רים פעילים</Label>
-            <div className="divide-y rounded-lg border">
-              {FEATURE_LABELS.map(({ key, label }) => (
-                <div key={key} className="flex items-center justify-between px-3 py-2.5">
-                  <span className="text-sm">{label}</span>
-                  <Switch
-                    checked={form.features[key]}
-                    onCheckedChange={(v) => set("features", { ...form.features, [key]: v })}
-                  />
+        {MODULES.map((m) => {
+          const enabled = Boolean(modules[m.id]);
+          const Body = m.id === "accessibility" ? AccessibilityModule : SeoModule;
+          return (
+            <TabsContent key={m.id} value={m.id} className="space-y-6 pt-4">
+              <div className="flex items-center justify-between rounded-lg border bg-muted/30 px-4 py-3">
+                <div>
+                  <p className="font-medium">מודול {m.name}</p>
+                  <p className="text-xs text-muted-foreground">{m.tagline}</p>
                 </div>
-              ))}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+                <Switch checked={enabled} onCheckedChange={(v) => toggle(m.id, v)} />
+              </div>
+              {enabled ? (
+                <Body site={site} />
+              ) : (
+                <Card className="border-dashed">
+                  <CardContent className="py-10 text-center text-muted-foreground">
+                    המודול כבוי. הפעילו אותו כדי להגדיר אותו לאתר הזה.
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+          );
+        })}
+      </Tabs>
 
-      {/* Accessibility statement (legally required in Israel) */}
-      <Card>
-        <CardHeader>
-          <CardTitle>הצהרת נגישות ורכז נגישות</CardTitle>
-          <CardDescription>נדרש לפי תקנות שוויון זכויות לאנשים עם מוגבלות, 2013.</CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-1.5 sm:col-span-2">
-            <Label htmlFor="statement">קישור להצהרת נגישות</Label>
-            <Input
-              id="statement"
-              dir="ltr"
-              value={form.statement_url ?? ""}
-              onChange={(e) => set("statement_url", e.target.value)}
-              placeholder="https://example.co.il/accessibility"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="coord-name">שם רכז הנגישות</Label>
-            <Input id="coord-name" value={form.coordinator_name ?? ""} onChange={(e) => set("coordinator_name", e.target.value)} />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="coord-email">דוא"ל הרכז</Label>
-            <Input id="coord-email" dir="ltr" value={form.coordinator_email ?? ""} onChange={(e) => set("coordinator_email", e.target.value)} />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="coord-phone">טלפון הרכז</Label>
-            <Input id="coord-phone" dir="ltr" value={form.coordinator_phone ?? ""} onChange={(e) => set("coordinator_phone", e.target.value)} />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Danger zone */}
       <Card className="border-destructive/40">
         <CardHeader>
           <CardTitle className="text-destructive">מחיקת אתר</CardTitle>
@@ -230,7 +132,7 @@ function SiteDetail() {
             </AlertDialogTrigger>
             <AlertDialogContent dir="rtl">
               <AlertDialogHeader>
-                <AlertDialogTitle>למחוק את "{form.name}"?</AlertDialogTitle>
+                <AlertDialogTitle>למחוק את "{site.name}"?</AlertDialogTitle>
                 <AlertDialogDescription>לא ניתן לשחזר. קוד ההתקנה יפסיק לעבוד.</AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
