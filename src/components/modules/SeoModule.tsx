@@ -13,6 +13,8 @@ import {
   type Recommendation,
 } from "@/lib/seo";
 import type { Site } from "@/lib/sites";
+import { SeoAiAgent } from "./SeoAiAgent";
+import { SeoGoogle } from "./SeoGoogle";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -154,6 +156,10 @@ export function SeoModule({ site }: { site: Site }) {
           </CardContent>
         </Card>
       )}
+
+      <SeoAiAgent site={site} />
+
+      <SeoGoogle />
 
       <div className="grid gap-4 md:grid-cols-3">
         <GeneratorCard title="robots.txt" filename="robots.txt" description="גישה לבוטים של AI + הפניה ל-sitemap." content={generateRobotsTxt(site.domain)} />
