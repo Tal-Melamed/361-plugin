@@ -2,7 +2,7 @@
 // vite.config.ts). Faithful vanilla port of the bugbox AccessibilityWidget,
 // delivered as a single CDN script for any site.
 import { Store } from "./core/state";
-import { readConfig } from "./core/config";
+import { readConfig, readSiteKey, fetchRemoteConfig } from "./core/config";
 import { applyToDOM } from "./features/visual";
 import { applyProtection } from "./features/protection";
 import { buildStyles } from "./ui/styles";
@@ -32,8 +32,14 @@ function boot(): void {
   applyToDOM(store.get());
   store.subscribe(applyToDOM);
 
-  // Site-owner protection behaviors (from the snippet's data-* config).
-  applyProtection(readConfig(SCRIPT));
+  // Site-owner protection: apply the snippet's data-* config instantly, then
+  // pull live config from the server and re-apply if it changed (no re-paste).
+  const baseCfg = readConfig(SCRIPT);
+  applyProtection(baseCfg);
+  const siteKey = readSiteKey(SCRIPT);
+  void fetchRemoteConfig(siteKey, baseCfg).then((remote) => {
+    if (remote) applyProtection(remote);
+  });
 
   // Component A: UI.
   const root = document.createElement("div");
