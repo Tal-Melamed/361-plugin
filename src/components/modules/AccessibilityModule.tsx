@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Copy, Check } from "lucide-react";
+import { Copy, Check, Wand2, Download } from "lucide-react";
 import { toast } from "sonner";
+import { generateStatement } from "@/lib/statement";
+import { Textarea } from "@/components/ui/textarea";
 import {
   updateSite,
   buildSnippet,
@@ -48,6 +50,7 @@ function normalize(s: Site): Site {
 export function AccessibilityModule({ site }: { site: Site }) {
   const qc = useQueryClient();
   const [copied, setCopied] = useState(false);
+  const [stmt, setStmt] = useState("");
   const [form, setForm] = useState<Site>(() => normalize(site));
 
   useEffect(() => {
@@ -196,6 +199,54 @@ export function AccessibilityModule({ site }: { site: Site }) {
           <div className="space-y-1.5">
             <Label htmlFor="coord-phone">טלפון הרכז</Label>
             <Input id="coord-phone" dir="ltr" value={form.coordinator_phone ?? ""} onChange={(e) => set("coordinator_phone", e.target.value)} />
+          </div>
+
+          <div className="space-y-2 sm:col-span-2">
+            <div className="flex items-center justify-between">
+              <Label>נוסח הצהרת נגישות מוכן</Label>
+              <div className="flex gap-2">
+                <Button type="button" variant="outline" size="sm" onClick={() => setStmt(generateStatement(form))}>
+                  <Wand2 className="ml-1 h-3.5 w-3.5" />
+                  צור נוסח
+                </Button>
+                {stmt && (
+                  <>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        navigator.clipboard.writeText(stmt);
+                        toast.success("הנוסח הועתק");
+                      }}
+                    >
+                      <Copy className="ml-1 h-3.5 w-3.5" />
+                      העתקה
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const blob = new Blob([stmt], { type: "text/plain;charset=utf-8" });
+                        const a = document.createElement("a");
+                        a.href = URL.createObjectURL(blob);
+                        a.download = "accessibility-statement.txt";
+                        a.click();
+                        URL.revokeObjectURL(a.href);
+                      }}
+                    >
+                      <Download className="ml-1 h-3.5 w-3.5" />
+                      הורדה
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
+            {stmt && <Textarea dir="rtl" value={stmt} readOnly className="h-48 text-xs" />}
+            <p className="text-xs text-muted-foreground">
+              צרו נוסח, פרסמו אותו כעמוד באתר, והדביקו את הכתובת בשדה "קישור להצהרת נגישות" למעלה.
+            </p>
           </div>
         </CardContent>
       </Card>
