@@ -124,5 +124,18 @@ html.a11y-big-cursor * {
 
 /* Prevent iOS Safari zoom on input focus */
 @media (max-width: 768px) { input, select, textarea { font-size: 16px !important; } }
+
+/* =========================================================================
+   SITE PROTECTION — owner behaviors from the snippet config (config.ts).
+   All scoped to skip the widget's own UI.
+   ========================================================================= */
+html.a11y-protect-media :is(img, video, picture, source):not(#a11y-widget-root *) {
+  -webkit-user-drag: none; user-select: none; -webkit-touch-callout: none;
+}
+html.a11y-no-select *:not(input):not(textarea):not([contenteditable]):not(#a11y-widget-root):not(#a11y-widget-root *) {
+  -webkit-user-select: none !important; user-select: none !important;
+}
+html.a11y-no-tap-highlight, html.a11y-no-tap-highlight * { -webkit-tap-highlight-color: transparent; }
+html.a11y-no-link-preview a:not(#a11y-widget-root *) { -webkit-touch-callout: none !important; }
 `;
 }

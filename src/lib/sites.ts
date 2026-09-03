@@ -16,6 +16,21 @@ export interface SiteModules {
 
 export const DEFAULT_MODULES: SiteModules = { accessibility: true, seo: false };
 
+// Site-owner widget behaviors enforced on the visitor's page (via snippet data-*).
+export interface SiteProtection {
+  protectMedia: boolean; // block image/media drag + right-click
+  disableTextSelection: boolean; // prevent selecting page text
+  removeTapHighlight: boolean; // strip the mobile tap-highlight color
+  disableLinkLongPress: boolean; // no long-press preview menu on links
+}
+
+export const DEFAULT_PROTECTION: SiteProtection = {
+  protectMedia: true,
+  disableTextSelection: false,
+  removeTapHighlight: true,
+  disableLinkLongPress: true,
+};
+
 export interface Site {
   id: string;
   owner_id: string;
@@ -26,6 +41,7 @@ export interface Site {
   position: "bottom-left" | "bottom-right";
   features: SiteFeatures;
   modules: SiteModules;
+  protection: SiteProtection;
   statement_url: string | null;
   coordinator_name: string | null;
   coordinator_email: string | null;
@@ -46,7 +62,15 @@ export const CDN_URL =
   "https://cdn.jsdelivr.net/gh/Tal-Melamed/accessibility-plugin@main/widget/dist/a11y.js";
 
 export function buildSnippet(site: Site): string {
-  return `<script src="${CDN_URL}" data-a11y data-site-key="${site.site_key}" async defer></script>`;
+  const p = { ...DEFAULT_PROTECTION, ...site.protection };
+  const b = (v: boolean) => (v ? "1" : "0");
+  const attrs = [
+    `data-protect-media="${b(p.protectMedia)}"`,
+    `data-no-text-select="${b(p.disableTextSelection)}"`,
+    `data-tap-highlight="${b(p.removeTapHighlight)}"`,
+    `data-no-link-preview="${b(p.disableLinkLongPress)}"`,
+  ].join(" ");
+  return `<script src="${CDN_URL}" data-a11y data-site-key="${site.site_key}" ${attrs} async defer></script>`;
 }
 
 function db() {

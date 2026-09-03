@@ -2,7 +2,15 @@ import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Copy, Check } from "lucide-react";
 import { toast } from "sonner";
-import { updateSite, buildSnippet, DEFAULT_FEATURES, type Site, type SiteFeatures } from "@/lib/sites";
+import {
+  updateSite,
+  buildSnippet,
+  DEFAULT_FEATURES,
+  DEFAULT_PROTECTION,
+  type Site,
+  type SiteFeatures,
+  type SiteProtection,
+} from "@/lib/sites";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,13 +26,24 @@ const FEATURE_LABELS: { key: keyof SiteFeatures; label: string }[] = [
   { key: "bigCursor", label: "סמן גדול" },
 ];
 
+const PROTECTION_LABELS: { key: keyof SiteProtection; label: string; hint: string }[] = [
+  { key: "protectMedia", label: "הגנה על תמונות ומדיה", hint: "חסימת גרירה, שמירה וקליק-ימני על תמונות ווידאו" },
+  { key: "disableTextSelection", label: "מניעת סימון טקסט", hint: "מונע הדגשה והעתקה של טקסט מהאתר (עלול לפגוע בנגישות)" },
+  { key: "removeTapHighlight", label: "הסרת הדגשת מגע (מובייל)", hint: "מסיר את הריבוע האפור בלחיצה על אלמנטים בנייד" },
+  { key: "disableLinkLongPress", label: "מניעת תצוגה מקדימה בקישור", hint: "מבטל את תפריט הלחיצה-הארוכה על קישורים בנייד" },
+];
+
 export function AccessibilityModule({ site }: { site: Site }) {
   const qc = useQueryClient();
   const [copied, setCopied] = useState(false);
   const [form, setForm] = useState<Site>(site);
 
   useEffect(() => {
-    setForm({ ...site, features: { ...DEFAULT_FEATURES, ...site.features } });
+    setForm({
+      ...site,
+      features: { ...DEFAULT_FEATURES, ...site.features },
+      protection: { ...DEFAULT_PROTECTION, ...site.protection },
+    });
   }, [site]);
 
   const save = useMutation({
@@ -115,6 +134,29 @@ export function AccessibilityModule({ site }: { site: Site }) {
                 </div>
               ))}
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>הגנות אתר</CardTitle>
+          <CardDescription>התנהגויות שהווידג'ט אוכף על המבקרים באתר. (משנים הגדרה → מעתיקים מחדש את קוד ההתקנה.)</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="divide-y rounded-lg border">
+            {PROTECTION_LABELS.map(({ key, label, hint }) => (
+              <div key={key} className="flex items-center justify-between gap-3 px-3 py-2.5">
+                <div className="min-w-0">
+                  <p className="text-sm">{label}</p>
+                  <p className="text-xs text-muted-foreground">{hint}</p>
+                </div>
+                <Switch
+                  checked={form.protection[key]}
+                  onCheckedChange={(v) => set("protection", { ...form.protection, [key]: v })}
+                />
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>

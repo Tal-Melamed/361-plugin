@@ -2,12 +2,17 @@
 // vite.config.ts). Faithful vanilla port of the bugbox AccessibilityWidget,
 // delivered as a single CDN script for any site.
 import { Store } from "./core/state";
+import { readConfig } from "./core/config";
 import { applyToDOM } from "./features/visual";
+import { applyProtection } from "./features/protection";
 import { buildStyles } from "./ui/styles";
 import { createTrigger } from "./ui/button";
 import { Panel } from "./ui/panel";
 
 const FLAG = "__a11yWidgetLoaded";
+
+// Capture the snippet's <script> now (currentScript is null once boot runs later).
+const SCRIPT = document.currentScript as HTMLScriptElement | null;
 
 function boot(): void {
   const w = window as unknown as Record<string, unknown>;
@@ -26,6 +31,9 @@ function boot(): void {
   // Apply persisted prefs now; the critical shim already prevented FOUC.
   applyToDOM(store.get());
   store.subscribe(applyToDOM);
+
+  // Site-owner protection behaviors (from the snippet's data-* config).
+  applyProtection(readConfig(SCRIPT));
 
   // Component A: UI.
   const root = document.createElement("div");
