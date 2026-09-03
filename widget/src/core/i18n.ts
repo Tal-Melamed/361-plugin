@@ -13,6 +13,11 @@ export const HE = {
   highlightLinks: "הדגשת קישורים",
   bigCursor: "סמן גדול",
 
+  // Accessibility statement (legally required)
+  statementTitle: "הצהרת נגישות",
+  statementLink: "צפייה בהצהרת הנגישות",
+  coordinator: "רכז/ת נגישות",
+
   // SR announcements (aria-live)
   on: "מופעל",
   off: "כבוי",

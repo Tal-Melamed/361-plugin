@@ -4,6 +4,7 @@
 // trap, Esc-to-close, aria-live announcements.
 import { HE } from "../core/i18n";
 import { Store, type A11yState } from "../core/state";
+import type { StatementInfo } from "../core/config";
 import { A11Y_ICON } from "./button";
 
 const CLOSE_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>`;
@@ -74,9 +75,39 @@ export class Panel {
         </div>
         ${toggles}
         <button type="button" class="a11y-reset" data-act="reset">${RESET_ICON}<span>${HE.reset}</span></button>
+        <div class="a11y-statement" hidden></div>
         <div class="a11y-sr-only a11y-live" role="status" aria-live="polite"></div>
       </div>
     `;
+  }
+
+  // Renders the accessibility statement + coordinator contact (from live config).
+  // Values are owner-entered → escaped; the URL is scheme-checked.
+  setStatement(s: StatementInfo | null): void {
+    const box = this.el.querySelector<HTMLElement>(".a11y-statement");
+    if (!box) return;
+    const has = s && (s.url || s.coordinatorName || s.coordinatorPhone || s.coordinatorEmail);
+    if (!s || !has) {
+      box.hidden = true;
+      box.innerHTML = "";
+      return;
+    }
+    const parts = [`<p class="a11y-section-label">${HE.statementTitle}</p>`];
+    const safeUrl = httpUrl(s.url);
+    if (safeUrl) {
+      parts.push(
+        `<a href="${attr(safeUrl)}" target="_blank" rel="noopener noreferrer">${HE.statementLink}</a>`,
+      );
+    }
+    if (s.coordinatorName || s.coordinatorPhone || s.coordinatorEmail) {
+      parts.push(`<div class="a11y-coordinator">`);
+      if (s.coordinatorName) parts.push(`<div class="a11y-coord-name">${HE.coordinator}: ${esc(s.coordinatorName)}</div>`);
+      if (s.coordinatorPhone) parts.push(`<a href="tel:${attr(s.coordinatorPhone.replace(/[^\d+]/g, ""))}">☎ ${esc(s.coordinatorPhone)}</a>`);
+      if (s.coordinatorEmail) parts.push(`<a href="mailto:${attr(s.coordinatorEmail)}">✉ ${esc(s.coordinatorEmail)}</a>`);
+      parts.push(`</div>`);
+    }
+    box.innerHTML = parts.join("");
+    box.hidden = false;
   }
 
   private onClick = (e: MouseEvent): void => {
@@ -161,4 +192,16 @@ export class Panel {
     this.trigger.setAttribute("aria-expanded", "false");
     this.lastFocus?.focus?.();
   }
+}
+
+// --- escaping for owner-entered statement values (XSS-safe) ---
+function esc(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+function attr(s: string): string {
+  return esc(s).replace(/"/g, "&quot;");
+}
+function httpUrl(url: string | null): string | null {
+  if (!url) return null;
+  return /^https?:\/\//i.test(url.trim()) ? url.trim() : null;
 }

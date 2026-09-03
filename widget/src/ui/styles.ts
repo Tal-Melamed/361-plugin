@@ -91,6 +91,15 @@ export function buildStyles(): string {
 
 .a11y-sr-only { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 
+/* Accessibility statement + coordinator (legally required) */
+.a11y-statement { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; padding-top: 12px; border-top: 1px solid #333; }
+.a11y-statement .a11y-section-label { margin: 0; }
+.a11y-statement a { color: #93c5fd; font-size: 13px; text-decoration: none; }
+.a11y-statement a:hover { text-decoration: underline; }
+.a11y-statement a:focus-visible { outline: 2px solid #93c5fd; outline-offset: 2px; }
+.a11y-coordinator { display: flex; flex-direction: column; gap: 4px; margin-top: 2px; }
+.a11y-coord-name { font-size: 12px; color: #9ca3af; }
+
 /* =========================================================================
    FEATURE CSS — identical to the bugbox index.css a11y-* effects.
    ========================================================================= */

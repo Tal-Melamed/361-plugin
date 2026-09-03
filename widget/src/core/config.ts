@@ -35,12 +35,26 @@ export function readSiteKey(script: HTMLScriptElement | null): string {
   return script?.dataset.siteKey ?? "";
 }
 
-// Fetches live config for this site and merges its protection flags over the
-// data-* base. Never throws; returns null on any failure so the base config stays.
+// Accessibility statement + coordinator contact (legally required in Israel),
+// shown inside the panel. All optional.
+export interface StatementInfo {
+  url: string | null;
+  coordinatorName: string | null;
+  coordinatorPhone: string | null;
+  coordinatorEmail: string | null;
+}
+
+export interface RemoteConfig {
+  protection: WidgetConfig;
+  statement: StatementInfo;
+}
+
+// Fetches live config for this site: merges protection over the data-* base and
+// pulls the accessibility statement. Never throws; returns null on any failure.
 export async function fetchRemoteConfig(
   siteKey: string,
   base: WidgetConfig,
-): Promise<WidgetConfig | null> {
+): Promise<RemoteConfig | null> {
   if (!siteKey) return null;
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/get_widget_config`, {
@@ -53,9 +67,23 @@ export async function fetchRemoteConfig(
       body: JSON.stringify({ p_site_key: siteKey }),
     });
     if (!res.ok) return null;
-    const cfg = (await res.json()) as { protection?: Partial<WidgetConfig> } | null;
-    if (!cfg || !cfg.protection) return null;
-    return { ...base, ...cfg.protection };
+    const cfg = (await res.json()) as {
+      protection?: Partial<WidgetConfig>;
+      statement_url?: string | null;
+      coordinator_name?: string | null;
+      coordinator_phone?: string | null;
+      coordinator_email?: string | null;
+    } | null;
+    if (!cfg) return null;
+    return {
+      protection: { ...base, ...(cfg.protection ?? {}) },
+      statement: {
+        url: cfg.statement_url ?? null,
+        coordinatorName: cfg.coordinator_name ?? null,
+        coordinatorPhone: cfg.coordinator_phone ?? null,
+        coordinatorEmail: cfg.coordinator_email ?? null,
+      },
+    };
   } catch {
     return null;
   }

@@ -38,7 +38,9 @@ function boot(): void {
   applyProtection(baseCfg);
   const siteKey = readSiteKey(SCRIPT);
   void fetchRemoteConfig(siteKey, baseCfg).then((remote) => {
-    if (remote) applyProtection(remote);
+    if (!remote) return;
+    applyProtection(remote.protection);
+    panel.setStatement(remote.statement); // accessibility statement in the panel
   });
 
   // Component A: UI.
@@ -54,6 +56,7 @@ function boot(): void {
     open: () => panel.show(),
     close: () => panel.close(),
     reset: () => store.reset(),
+    setStatement: (s: Parameters<typeof panel.setStatement>[0]) => panel.setStatement(s),
   };
 }
 

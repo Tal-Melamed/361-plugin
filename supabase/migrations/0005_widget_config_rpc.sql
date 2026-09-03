@@ -12,7 +12,11 @@ as $$
     'accent', accent,
     'position', position,
     'features', features,
-    'protection', protection
+    'protection', protection,
+    'statement_url', statement_url,
+    'coordinator_name', coordinator_name,
+    'coordinator_phone', coordinator_phone,
+    'coordinator_email', coordinator_email
   )
   from public.sites
   where site_key = p_site_key
