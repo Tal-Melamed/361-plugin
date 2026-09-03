@@ -35,17 +35,23 @@ const PROTECTION_LABELS: { key: keyof SiteProtection; label: string; hint: strin
   { key: "preventPrint", label: "מניעת הדפסה", hint: "הדפסת הדף תצא ריקה" },
 ];
 
+// Merge defaults so the form is always complete — resilient to rows that predate
+// a column (e.g. before the protection migration), which would otherwise crash.
+function normalize(s: Site): Site {
+  return {
+    ...s,
+    features: { ...DEFAULT_FEATURES, ...s.features },
+    protection: { ...DEFAULT_PROTECTION, ...s.protection },
+  };
+}
+
 export function AccessibilityModule({ site }: { site: Site }) {
   const qc = useQueryClient();
   const [copied, setCopied] = useState(false);
-  const [form, setForm] = useState<Site>(site);
+  const [form, setForm] = useState<Site>(() => normalize(site));
 
   useEffect(() => {
-    setForm({
-      ...site,
-      features: { ...DEFAULT_FEATURES, ...site.features },
-      protection: { ...DEFAULT_PROTECTION, ...site.protection },
-    });
+    setForm(normalize(site));
   }, [site]);
 
   const save = useMutation({

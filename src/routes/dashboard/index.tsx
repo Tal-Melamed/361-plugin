@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Globe, ChevronLeft } from "lucide-react";
+import { Plus, Globe } from "lucide-react";
 import { toast } from "sonner";
 import { listSites, createSite } from "@/lib/sites";
 import { useSession } from "@/lib/useSession";
 import { DashboardShell } from "@/components/DashboardShell";
+import { SiteCard } from "@/components/SiteCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -116,17 +117,7 @@ function SitesList() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
           {sites.map((s) => (
-            <Link key={s.id} to="/dashboard/sites/$siteId" params={{ siteId: s.id }}>
-              <Card className="transition-colors hover:border-foreground/30">
-                <CardHeader className="flex-row items-center justify-between space-y-0">
-                  <CardTitle className="text-lg">{s.name}</CardTitle>
-                  <ChevronLeft className="h-5 w-5 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <p dir="ltr" className="text-right text-sm text-muted-foreground">{s.domain}</p>
-                </CardContent>
-              </Card>
-            </Link>
+            <SiteCard key={s.id} site={s} />
           ))}
         </div>
       )}
