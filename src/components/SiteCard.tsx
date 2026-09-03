@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { MoreVertical, Trash2, RotateCcw, ExternalLink, Loader2 } from "lucide-react";
+import { MoreVertical, Trash2, RotateCcw, ExternalLink, Loader2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { deleteSite, updateSite, DEFAULT_FEATURES, DEFAULT_PROTECTION, type Site } from "@/lib/sites";
 import { checkSiteInstall, type InstallStatus } from "@/lib/siteStatus";
@@ -37,11 +37,16 @@ export function SiteCard({ site }: { site: Site }) {
   const check = useServerFn(checkSiteInstall);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
-  const { data: status, isLoading } = useQuery({
+  const { data: status, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["install", site.id],
     queryFn: () => check({ data: { domain: site.domain, siteKey: site.site_key } }).then((r) => r.status),
     staleTime: 60_000,
   });
+
+  const recheck = () => {
+    toast.info("בודק חיבור…");
+    void refetch();
+  };
 
   const reset = useMutation({
     mutationFn: () =>
@@ -79,7 +84,7 @@ export function SiteCard({ site }: { site: Site }) {
           </Link>
           <p dir="ltr" className="mt-1 truncate text-right text-sm text-muted-foreground">{site.domain}</p>
           <div className="mt-2 flex items-center gap-1.5 text-xs">
-            {isLoading || !s ? (
+            {isLoading || isFetching || !s ? (
               <>
                 <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
                 <span className="text-muted-foreground">בודק…</span>
@@ -105,6 +110,10 @@ export function SiteCard({ site }: { site: Site }) {
                 <ExternalLink className="ml-2 h-4 w-4" />
                 פתיחה
               </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={recheck}>
+              <RefreshCw className="ml-2 h-4 w-4" />
+              חיבור מחדש
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => reset.mutate()}>
               <RotateCcw className="ml-2 h-4 w-4" />
