@@ -31,6 +31,8 @@ const PROTECTION_LABELS: { key: keyof SiteProtection; label: string; hint: strin
   { key: "disableTextSelection", label: "מניעת סימון טקסט", hint: "מונע הדגשה והעתקה של טקסט מהאתר (עלול לפגוע בנגישות)" },
   { key: "removeTapHighlight", label: "הסרת הדגשת מגע (מובייל)", hint: "מסיר את הריבוע האפור בלחיצה על אלמנטים בנייד" },
   { key: "disableLinkLongPress", label: "מניעת תצוגה מקדימה בקישור", hint: "מבטל את תפריט הלחיצה-הארוכה על קישורים בנייד" },
+  { key: "preventCopy", label: "מניעת העתקת טקסט", hint: "חוסם העתקה (Ctrl+C) של טקסט מהאתר. שדות טופס לא מושפעים" },
+  { key: "preventPrint", label: "מניעת הדפסה", hint: "הדפסת הדף תצא ריקה" },
 ];
 
 export function AccessibilityModule({ site }: { site: Site }) {

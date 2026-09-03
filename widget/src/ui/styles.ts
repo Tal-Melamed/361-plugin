@@ -137,5 +137,6 @@ html.a11y-no-select *:not(input):not(textarea):not([contenteditable]):not(#a11y-
 }
 html.a11y-no-tap-highlight, html.a11y-no-tap-highlight * { -webkit-tap-highlight-color: transparent; }
 html.a11y-no-link-preview a:not(#a11y-widget-root *) { -webkit-touch-callout: none !important; }
+@media print { html.a11y-no-print body { display: none !important; } }
 `;
 }

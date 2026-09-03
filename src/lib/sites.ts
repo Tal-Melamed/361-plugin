@@ -22,6 +22,8 @@ export interface SiteProtection {
   disableTextSelection: boolean; // prevent selecting page text
   removeTapHighlight: boolean; // strip the mobile tap-highlight color
   disableLinkLongPress: boolean; // no long-press preview menu on links
+  preventCopy: boolean; // block copying page text
+  preventPrint: boolean; // blank the page when printed
 }
 
 export const DEFAULT_PROTECTION: SiteProtection = {
@@ -29,6 +31,8 @@ export const DEFAULT_PROTECTION: SiteProtection = {
   disableTextSelection: false,
   removeTapHighlight: true,
   disableLinkLongPress: true,
+  preventCopy: false,
+  preventPrint: false,
 };
 
 export interface Site {
@@ -69,6 +73,8 @@ export function buildSnippet(site: Site): string {
     `data-no-text-select="${b(p.disableTextSelection)}"`,
     `data-tap-highlight="${b(p.removeTapHighlight)}"`,
     `data-no-link-preview="${b(p.disableLinkLongPress)}"`,
+    `data-no-copy="${b(p.preventCopy)}"`,
+    `data-no-print="${b(p.preventPrint)}"`,
   ].join(" ");
   return `<script src="${CDN_URL}" data-a11y data-site-key="${site.site_key}" ${attrs} async defer></script>`;
 }

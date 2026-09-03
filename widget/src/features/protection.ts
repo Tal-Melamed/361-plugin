@@ -13,6 +13,7 @@ export function applyProtection(cfg: WidgetConfig): void {
   html.classList.toggle("a11y-no-select", cfg.disableTextSelection);
   html.classList.toggle("a11y-no-tap-highlight", cfg.removeTapHighlight);
   html.classList.toggle("a11y-no-link-preview", cfg.disableLinkLongPress);
+  html.classList.toggle("a11y-no-print", cfg.preventPrint);
 
   if (!bound) {
     bound = true;
@@ -29,5 +30,13 @@ export function applyProtection(cfg: WidgetConfig): void {
       },
       { capture: true },
     );
+    // Block copy unless the user is in a form field or the widget's own UI.
+    document.addEventListener("copy", (e) => {
+      if (!live?.preventCopy) return;
+      const a = document.activeElement as HTMLElement | null;
+      const allowed =
+        a && (a.tagName === "INPUT" || a.tagName === "TEXTAREA" || a.isContentEditable || a.closest("#a11y-widget-root"));
+      if (!allowed) e.preventDefault();
+    });
   }
 }

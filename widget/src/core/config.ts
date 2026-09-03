@@ -8,6 +8,8 @@ export interface WidgetConfig {
   disableTextSelection: boolean; // prevent selecting page text. Default OFF.
   removeTapHighlight: boolean; // strip the mobile tap-highlight color. Default ON.
   disableLinkLongPress: boolean; // no long-press preview menu on links. Default ON.
+  preventCopy: boolean; // block copying page text (Ctrl+C). Default OFF.
+  preventPrint: boolean; // blank the page when printed. Default OFF.
 }
 
 // Public Supabase project (anon key is public by design; RLS + a config-only RPC
@@ -24,6 +26,8 @@ export function readConfig(script: HTMLScriptElement | null): WidgetConfig {
     disableTextSelection: d.noTextSelect === "1",
     removeTapHighlight: d.tapHighlight !== "0",
     disableLinkLongPress: d.noLinkPreview !== "0",
+    preventCopy: d.noCopy === "1",
+    preventPrint: d.noPrint === "1",
   };
 }
 
