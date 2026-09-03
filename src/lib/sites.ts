@@ -50,6 +50,7 @@ export interface Site {
   coordinator_name: string | null;
   coordinator_email: string | null;
   coordinator_phone: string | null;
+  last_seen: string | null; // widget heartbeat (updated by the config RPC)
   created_at: string;
 }
 

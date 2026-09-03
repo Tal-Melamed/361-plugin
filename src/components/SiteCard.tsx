@@ -37,14 +37,21 @@ export function SiteCard({ site }: { site: Site }) {
   const check = useServerFn(checkSiteInstall);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
+  // Primary signal: the widget's heartbeat (last_seen, stamped by the config RPC).
+  // Seen in the last 7 days → definitely live, no network check needed.
+  const seenRecently = !!site.last_seen && Date.now() - Date.parse(site.last_seen) < 7 * 86_400_000;
+
+  // Fallback for sites not seen recently (e.g. no traffic yet): static HTML check.
   const { data: status, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["install", site.id],
     queryFn: () => check({ data: { domain: site.domain, siteKey: site.site_key } }).then((r) => r.status),
     staleTime: 60_000,
+    enabled: !seenRecently,
   });
 
   const recheck = () => {
     toast.info("בודק חיבור…");
+    qc.invalidateQueries({ queryKey: ["sites"] }); // refresh last_seen
     void refetch();
   };
 
@@ -73,7 +80,8 @@ export function SiteCard({ site }: { site: Site }) {
     onError: (e) => toast.error(e instanceof Error ? e.message : "שגיאה במחיקה"),
   });
 
-  const s = status ? STATUS[status] : null;
+  const s = seenRecently ? STATUS.ok : status ? STATUS[status] : null;
+  const checking = !seenRecently && (isLoading || isFetching);
 
   return (
     <Card className="transition-colors hover:border-foreground/30">
@@ -84,7 +92,7 @@ export function SiteCard({ site }: { site: Site }) {
           </Link>
           <p dir="ltr" className="mt-1 truncate text-right text-sm text-muted-foreground">{site.domain}</p>
           <div className="mt-2 flex items-center gap-1.5 text-xs">
-            {isLoading || isFetching || !s ? (
+            {checking || !s ? (
               <>
                 <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
                 <span className="text-muted-foreground">בודק…</span>
