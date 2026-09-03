@@ -44,9 +44,24 @@ export interface StatementInfo {
   coordinatorEmail: string | null;
 }
 
+// Button appearance (color + corner).
+export interface Appearance {
+  accent: string;
+  position: "bottom-left" | "bottom-right";
+}
+
+export function readAppearance(script: HTMLScriptElement | null): Appearance {
+  const d = script?.dataset ?? ({} as DOMStringMap);
+  return {
+    accent: d.accent || "#000000",
+    position: d.position === "bottom-right" ? "bottom-right" : "bottom-left",
+  };
+}
+
 export interface RemoteConfig {
   protection: WidgetConfig;
   statement: StatementInfo;
+  appearance: Appearance;
 }
 
 // Fetches live config for this site: merges protection over the data-* base and
@@ -69,6 +84,8 @@ export async function fetchRemoteConfig(
     if (!res.ok) return null;
     const cfg = (await res.json()) as {
       protection?: Partial<WidgetConfig>;
+      accent?: string | null;
+      position?: string | null;
       statement_url?: string | null;
       coordinator_name?: string | null;
       coordinator_phone?: string | null;
@@ -77,6 +94,10 @@ export async function fetchRemoteConfig(
     if (!cfg) return null;
     return {
       protection: { ...base, ...(cfg.protection ?? {}) },
+      appearance: {
+        accent: cfg.accent || "#000000",
+        position: cfg.position === "bottom-right" ? "bottom-right" : "bottom-left",
+      },
       statement: {
         url: cfg.statement_url ?? null,
         coordinatorName: cfg.coordinator_name ?? null,

@@ -2,9 +2,10 @@
 // vite.config.ts). Faithful vanilla port of the bugbox AccessibilityWidget,
 // delivered as a single CDN script for any site.
 import { Store } from "./core/state";
-import { readConfig, readSiteKey, fetchRemoteConfig } from "./core/config";
+import { readConfig, readSiteKey, readAppearance, fetchRemoteConfig } from "./core/config";
 import { applyToDOM } from "./features/visual";
 import { applyProtection } from "./features/protection";
+import { applyAppearance } from "./features/appearance";
 import { buildStyles } from "./ui/styles";
 import { createTrigger } from "./ui/button";
 import { Panel } from "./ui/panel";
@@ -32,17 +33,6 @@ function boot(): void {
   applyToDOM(store.get());
   store.subscribe(applyToDOM);
 
-  // Site-owner protection: apply the snippet's data-* config instantly, then
-  // pull live config from the server and re-apply if it changed (no re-paste).
-  const baseCfg = readConfig(SCRIPT);
-  applyProtection(baseCfg);
-  const siteKey = readSiteKey(SCRIPT);
-  void fetchRemoteConfig(siteKey, baseCfg).then((remote) => {
-    if (!remote) return;
-    applyProtection(remote.protection);
-    panel.setStatement(remote.statement); // accessibility statement in the panel
-  });
-
   // Component A: UI.
   const root = document.createElement("div");
   root.id = "a11y-widget-root";
@@ -50,6 +40,19 @@ function boot(): void {
   const panel = new Panel(store, trigger);
   root.append(trigger, panel.el);
   document.body.appendChild(root);
+
+  // Apply the snippet's data-* config instantly (protection + appearance), then
+  // pull live config from the server and re-apply if it changed (no re-paste).
+  const baseCfg = readConfig(SCRIPT);
+  applyProtection(baseCfg);
+  applyAppearance(root, readAppearance(SCRIPT));
+  const siteKey = readSiteKey(SCRIPT);
+  void fetchRemoteConfig(siteKey, baseCfg).then((remote) => {
+    if (!remote) return;
+    applyProtection(remote.protection);
+    applyAppearance(root, remote.appearance); // color + position from dashboard
+    panel.setStatement(remote.statement); // accessibility statement in the panel
+  });
 
   // Minimal API for the host / dashboard.
   w["A11yWidget"] = {

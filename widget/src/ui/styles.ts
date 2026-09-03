@@ -15,15 +15,22 @@ export function buildStyles(): string {
 .a11y-trigger {
   position: fixed; left: 32px; bottom: 24px; z-index: 2147483646;
   width: 36px; height: 36px; border-radius: 9999px;
-  background: #000; color: #fff; border: 0; cursor: pointer;
+  background: var(--a11y-accent, #000); color: #fff; border: 0; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   box-shadow: 0 10px 15px -3px rgba(0,0,0,.3);
-  transition: transform .2s ease, background .2s ease;
+  transition: transform .2s ease, filter .2s ease;
 }
-.a11y-trigger:hover { background: #1f2937; transform: scale(1.1); }
+.a11y-trigger:hover { transform: scale(1.1); filter: brightness(1.12); }
+/* Right-side placement (data-position / live config) */
+#a11y-widget-root.a11y-pos-right .a11y-trigger { left: auto; right: 32px; }
+#a11y-widget-root.a11y-pos-right .a11y-panel { left: auto; right: 16px; }
 .a11y-trigger:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
 .a11y-trigger svg { width: 18px; height: 18px; fill: currentColor; }
-@media (max-width: 768px) { .a11y-trigger { left: 16px; bottom: 16px; } }
+@media (max-width: 768px) {
+  .a11y-trigger { left: 16px; bottom: 16px; }
+  #a11y-widget-root.a11y-pos-right .a11y-trigger { left: auto; right: 16px; }
+  #a11y-widget-root.a11y-pos-right .a11y-panel { left: auto; right: 16px; }
+}
 
 /* ---- Panel ---- */
 .a11y-panel {

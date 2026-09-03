@@ -76,7 +76,8 @@ export function buildSnippet(site: Site): string {
     `data-no-copy="${b(p.preventCopy)}"`,
     `data-no-print="${b(p.preventPrint)}"`,
   ].join(" ");
-  return `<script src="${CDN_URL}" data-a11y data-site-key="${site.site_key}" ${attrs} async defer></script>`;
+  const appearance = `data-position="${site.position}" data-accent="${site.accent}"`;
+  return `<script src="${CDN_URL}" data-a11y data-site-key="${site.site_key}" ${appearance} ${attrs} async defer></script>`;
 }
 
 function db() {
