@@ -1,0 +1,27 @@
+name: Supabase keep-alive
+
+# Supabase Free pauses a project after 7 days without external API activity.
+# This hits the ping() RPC every 2 days (well under the 7-day window, with margin
+# for GitHub's occasional cron delays), which writes a timestamp and resets the clock.
+on:
+  schedule:
+    - cron: "0 7 */2 * *" # 07:00 UTC, every other day
+  workflow_dispatch: {} # allow a manual run from the Actions tab
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase
+        run: |
+          code=$(curl -s -o /tmp/out.txt -w "%{http_code}" \
+            -X POST "https://nblbeaawytyuxgfoixlj.supabase.co/rest/v1/rpc/ping" \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            -H "authorization: Bearer ${SUPABASE_ANON_KEY}" \
+            -H "content-type: application/json" \
+            -d '{}')
+          echo "HTTP $code"; cat /tmp/out.txt
+          test "$code" = "200"
+        env:
+          # anon key is public by design (already in the widget + .env); RLS protects data.
+          SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ibGJlYWF3eXR5dXhnZm9peGxqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0NDQ1NTcsImV4cCI6MjA5OTAyMDU1N30.ZHVeYpEBf2tUpS1iz30YXjVierROAgqrHJG5zHSmyJo
