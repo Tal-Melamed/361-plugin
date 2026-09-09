@@ -1,27 +1,53 @@
 name: Supabase keep-alive
 
-# Supabase Free pauses a project after 7 days without external API activity.
-# This hits the ping() RPC every 2 days (well under the 7-day window, with margin
-# for GitHub's occasional cron delays), which writes a timestamp and resets the clock.
+# Two independent "never sleep" guards:
+#  1. Ping the ping() RPC → external API write → resets Supabase's 7-day
+#     inactivity timer (Free tier pauses a project after 7 idle days).
+#  2. Push a tiny heartbeat commit to a separate 'keepalive' branch → the repo
+#     never reaches 60 idle days, which is when GitHub disables scheduled workflows.
 on:
   schedule:
-    - cron: "0 7 */2 * *" # 07:00 UTC, every other day
+    - cron: "0 7 * * 1,4" # Mon + Thu, 07:00 UTC (twice a week, well under 7 days)
   workflow_dispatch: {} # allow a manual run from the Actions tab
 
 jobs:
-  ping:
+  keepalive:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping Supabase
-        run: |
-          code=$(curl -s -o /tmp/out.txt -w "%{http_code}" \
-            -X POST "https://nblbeaawytyuxgfoixlj.supabase.co/rest/v1/rpc/ping" \
-            -H "apikey: ${SUPABASE_ANON_KEY}" \
-            -H "authorization: Bearer ${SUPABASE_ANON_KEY}" \
-            -H "content-type: application/json" \
-            -d '{}')
-          echo "HTTP $code"; cat /tmp/out.txt
-          test "$code" = "200"
+      - name: Ping Supabase (resets its inactivity timer)
         env:
           # anon key is public by design (already in the widget + .env); RLS protects data.
-          SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ibGJlYWF3eXR5dXhnZm9peGxqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0NDQ1NTcsImV4cCI6MjA5OTAyMDU1N30.ZHVeYpEBf2tUpS1iz30YXjVierROAgqrHJG5zHSmyJo
+          ANON: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ibGJlYWF3eXR5dXhnZm9peGxqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0NDQ1NTcsImV4cCI6MjA5OTAyMDU1N30.ZHVeYpEBf2tUpS1iz30YXjVierROAgqrHJG5zHSmyJo
+        run: |
+          ok=0
+          for i in 1 2 3; do
+            code=$(curl -sS -o /tmp/out.txt -w "%{http_code}" \
+              -X POST "https://nblbeaawytyuxgfoixlj.supabase.co/rest/v1/rpc/ping" \
+              -H "apikey: ${ANON}" \
+              -H "authorization: Bearer ${ANON}" \
+              -H "content-type: application/json" \
+              -d '{}') || code=000
+            echo "Supabase HTTP $code (try $i): $(cat /tmp/out.txt)"
+            case "$code" in 2*) ok=1; break ;; esac
+            sleep 20
+          done
+          [ "$ok" = 1 ] || { echo "Supabase not OK (may be paused)"; exit 1; }
+
+      - name: Heartbeat commit (keeps GitHub from disabling the schedule after 60 idle days)
+        env:
+          PAT: ${{ secrets.KEEPALIVE_PAT }}
+          REPO: ${{ github.repository }} # owner/repo, auto — survives repo rename
+        run: |
+          if [ -z "$PAT" ]; then echo "KEEPALIVE_PAT not set — skipping heartbeat step."; exit 0; fi
+          tmp=$(mktemp -d)
+          git clone --depth 1 "https://x-access-token:${PAT}@github.com/${REPO}.git" "$tmp"
+          cd "$tmp"
+          git config user.name  "keepalive-bot"
+          git config user.email "keepalive-bot@users.noreply.github.com"
+          git checkout --orphan keepalive
+          git rm -rf --quiet . 2>/dev/null || true
+          date -u +"last keep-alive: %Y-%m-%dT%H:%M:%SZ" > heartbeat.txt
+          git add heartbeat.txt
+          git commit -q -m "chore: keep-alive heartbeat [skip ci]"
+          git push -q -f origin keepalive
+          echo "Heartbeat pushed to the 'keepalive' branch."
