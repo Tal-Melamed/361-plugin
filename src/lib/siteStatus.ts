@@ -28,7 +28,7 @@ async function probe(url: string, siteKey: string): Promise<InstallStatus> {
     const html = await res.text();
     const installed =
       html.includes(`data-site-key="${siteKey}"`) ||
-      /accessibility-plugin[^"']*\/a11y\.js/.test(html) ||
+      /(accessibility-plugin|361-plugin)[^"']*\/a11y\.js/.test(html) ||
       html.includes("a11y.js");
     return installed ? "ok" : "not-installed";
   } catch {

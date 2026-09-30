@@ -64,7 +64,7 @@ export const DEFAULT_FEATURES: SiteFeatures = {
 
 // Where the widget bundle is served from. Update once your CDN/tag is live.
 export const CDN_URL =
-  "https://cdn.jsdelivr.net/gh/Tal-Melamed/accessibility-plugin@main/widget/dist/a11y.js";
+  "https://cdn.jsdelivr.net/gh/Tal-Melamed/361-plugin@main/widget/dist/a11y.js";
 
 export function buildSnippet(site: Site): string {
   const p = { ...DEFAULT_PROTECTION, ...site.protection };
