@@ -7,6 +7,13 @@
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
 export default defineConfig({
+  // Force the Nitro Cloudflare Worker build outside Lovable. By default the
+  // Lovable config only runs Nitro inside its sandbox (auto-detected), so a
+  // self-hosted `bun run build` would emit a client-only bundle with no SSR
+  // Worker. Setting `nitro: true` makes the build produce dist/ +
+  // dist/server/wrangler.json (cloudflare-module preset, nodejs_compat) for
+  // standalone deploys to our own Cloudflare account.
+  nitro: true,
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
